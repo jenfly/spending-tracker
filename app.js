@@ -510,41 +510,36 @@
     renderMethod();
   });
 
-  // Tap a tile to save; long-press and drag a tile to reorder it.
-  const homeDrag = makeDragReorder($('#tiles'), '.tile', (draggedId, targetId) => {
-    moveCategoryBefore(draggedId, targetId);
-    renderTiles();
-  });
-
+  // Tap a tile to save; long-press a tile to edit it.
   (() => {
     const box = $('#tiles');
     let timer = null;
-    let dragging = false;
+    let longPressed = false;
     let sx = 0;
     let sy = 0;
 
     box.addEventListener('pointerdown', (e) => {
       const t = e.target.closest('.tile');
       if (!t) return;
-      dragging = false;
+      longPressed = false;
       sx = e.clientX;
       sy = e.clientY;
-      const pointerId = e.pointerId;
       clearTimeout(timer);
       timer = setTimeout(() => {
-        dragging = true;
-        homeDrag.begin(pointerId, t.dataset.id, sx, sy);
+        longPressed = true;
+        focusTileId = t.dataset.id;
+        go('tiles');
       }, 600);
     });
     box.addEventListener('pointermove', (e) => {
-      if (!dragging && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) clearTimeout(timer);
+      if (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10) clearTimeout(timer);
     });
     ['pointerup', 'pointercancel'].forEach((ev) => box.addEventListener(ev, () => clearTimeout(timer)));
     box.addEventListener('contextmenu', (e) => e.preventDefault());
     box.addEventListener('click', (e) => {
       const t = e.target.closest('.tile');
       if (!t) return;
-      if (dragging) { dragging = false; return; }
+      if (longPressed) { longPressed = false; return; }
       addEntry(t.dataset.id);
     });
   })();
