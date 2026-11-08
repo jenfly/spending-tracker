@@ -305,7 +305,83 @@ button { cursor: pointer; }
   border: 1px solid var(--line);
   border-radius: 10px;
 }
-.emoji-in { text-align: center; font-size: 22px; }
+.emoji-in {
+  height: 44px;
+  min-width: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  text-align: center;
+  font-size: 22px;
+}
+.emoji-in:active { background: var(--sage-soft); }
+
+/* ---------- emoji picker ---------- */
+.emoji-picker-search {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  margin-bottom: 4px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.emoji-row-label { margin: 10px 0 6px; color: var(--muted); font-size: 13px; }
+.emoji-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.emoji-chip {
+  flex: none;
+  width: 40px; height: 40px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 20px;
+}
+.emoji-chip:active { background: var(--sage-soft); }
+.emoji-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0;
+  padding: 4px;
+  background: var(--sage-soft);
+  border-radius: 999px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.emoji-tabs::-webkit-scrollbar { display: none; }
+.emoji-tab {
+  flex: none;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.emoji-tab[aria-checked="true"] { background: var(--sage); color: var(--on-sage); font-weight: 500; }
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-bottom: 4px;
+}
+.emoji-grid button {
+  height: 40px;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-size: 20px;
+}
+.emoji-grid button:active { background: var(--sage-soft); }
+.emoji-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 14px; padding: 10px 0; }
 .row-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
 .mini {
   min-width: 44px; height: 40px; padding: 0 12px;

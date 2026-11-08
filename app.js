@@ -23,6 +23,109 @@
     ['Kids', '🧸'],
   ];
 
+  const EMOJI_CATS = [
+    { id: 'popular', label: 'Popular' },
+    { id: 'food', label: 'Food & drink' },
+    { id: 'shop', label: 'Shopping' },
+    { id: 'home', label: 'Home & bills' },
+    { id: 'transport', label: 'Transport' },
+    { id: 'money', label: 'Money' },
+    { id: 'health', label: 'Health' },
+    { id: 'fun', label: 'Fun & travel' },
+    { id: 'family', label: 'Family' },
+    { id: 'other', label: 'Other' },
+  ];
+
+  const EMOJI_LIBRARY = [
+    { e: '🛒', k: ['cart', 'groceries', 'store', 'shopping'], cats: ['popular', 'home'] },
+    { e: '🍔', k: ['burger', 'fast food', 'dining'], cats: ['popular', 'food'] },
+    { e: '🚗', k: ['car', 'drive', 'gas', 'auto'], cats: ['popular', 'transport'] },
+    { e: '🏠', k: ['home', 'rent', 'house', 'mortgage'], cats: ['popular', 'home'] },
+    { e: '💳', k: ['card', 'credit', 'payment'], cats: ['popular', 'money'] },
+    { e: '☕', k: ['coffee', 'cafe', 'latte'], cats: ['popular', 'food'] },
+    { e: '🎬', k: ['movie', 'cinema', 'film'], cats: ['popular', 'fun'] },
+    { e: '✈️', k: ['flight', 'travel', 'plane', 'trip'], cats: ['popular', 'fun'] },
+    { e: '💊', k: ['medicine', 'pharmacy', 'health'], cats: ['popular', 'health'] },
+    { e: '🎁', k: ['gift', 'present', 'birthday'], cats: ['popular', 'shop'] },
+    { e: '📱', k: ['phone', 'mobile', 'cell'], cats: ['popular', 'home'] },
+    { e: '💰', k: ['money', 'savings', 'cash'], cats: ['popular', 'money'] },
+    { e: '🐶', k: ['dog', 'pet'], cats: ['popular', 'family'] },
+    { e: '👶', k: ['baby', 'kid', 'child'], cats: ['popular', 'family'] },
+    { e: '🏋️', k: ['gym', 'fitness', 'workout'], cats: ['popular', 'health'] },
+    { e: '🍺', k: ['beer', 'bar', 'drinks'], cats: ['popular', 'food'] },
+
+    { e: '🍕', k: ['pizza'], cats: ['food'] },
+    { e: '🍜', k: ['noodles', 'ramen', 'takeout'], cats: ['food'] },
+    { e: '🍣', k: ['sushi'], cats: ['food'] },
+    { e: '🍩', k: ['donut', 'dessert', 'sweet'], cats: ['food'] },
+    { e: '🍦', k: ['ice cream'], cats: ['food'] },
+    { e: '🍷', k: ['wine'], cats: ['food'] },
+    { e: '🥗', k: ['salad', 'healthy'], cats: ['food'] },
+    { e: '🍳', k: ['breakfast', 'eggs', 'cooking'], cats: ['food'] },
+    { e: '🧋', k: ['bubble tea', 'boba'], cats: ['food'] },
+    { e: '🍿', k: ['popcorn', 'snacks'], cats: ['food'] },
+
+    { e: '🛍️', k: ['shopping', 'bag'], cats: ['shop'] },
+    { e: '👗', k: ['clothes', 'dress', 'fashion'], cats: ['shop'] },
+    { e: '👟', k: ['shoes', 'sneakers'], cats: ['shop'] },
+    { e: '👜', k: ['purse', 'bag'], cats: ['shop'] },
+    { e: '💄', k: ['makeup', 'beauty'], cats: ['shop'] },
+    { e: '📦', k: ['package', 'delivery', 'order'], cats: ['shop'] },
+    { e: '💍', k: ['jewelry', 'ring'], cats: ['shop'] },
+    { e: '🕶️', k: ['sunglasses'], cats: ['shop'] },
+
+    { e: '🧹', k: ['cleaning', 'chores'], cats: ['home'] },
+    { e: '🪴', k: ['plant', 'garden'], cats: ['home'] },
+    { e: '🛋️', k: ['furniture', 'couch'], cats: ['home'] },
+    { e: '💡', k: ['electricity', 'utilities', 'lightbulb'], cats: ['home'] },
+    { e: '🔌', k: ['utilities', 'power'], cats: ['home'] },
+    { e: '🔧', k: ['repair', 'maintenance', 'tools'], cats: ['home'] },
+    { e: '🧾', k: ['receipt', 'bill', 'invoice'], cats: ['home', 'money'] },
+
+    { e: '⛽', k: ['gas', 'fuel', 'petrol'], cats: ['transport'] },
+    { e: '🚕', k: ['taxi', 'rideshare', 'cab'], cats: ['transport'] },
+    { e: '🚌', k: ['bus', 'transit'], cats: ['transport'] },
+    { e: '🚆', k: ['train', 'rail'], cats: ['transport'] },
+    { e: '🅿️', k: ['parking'], cats: ['transport'] },
+    { e: '🚲', k: ['bike', 'bicycle'], cats: ['transport'] },
+    { e: '🛵', k: ['scooter', 'moped'], cats: ['transport'] },
+
+    { e: '🏦', k: ['bank'], cats: ['money'] },
+    { e: '💸', k: ['expense', 'spending'], cats: ['money'] },
+    { e: '🧮', k: ['budget', 'calculate'], cats: ['money'] },
+    { e: '📊', k: ['chart', 'report', 'budget'], cats: ['money'] },
+    { e: '🪙', k: ['coin', 'savings'], cats: ['money'] },
+    { e: '💼', k: ['work', 'business'], cats: ['money'] },
+
+    { e: '🏥', k: ['hospital', 'doctor'], cats: ['health'] },
+    { e: '🦷', k: ['dentist', 'dental'], cats: ['health'] },
+    { e: '🧘', k: ['yoga', 'wellness'], cats: ['health'] },
+    { e: '🩺', k: ['doctor', 'checkup'], cats: ['health'] },
+    { e: '🚴', k: ['cycling', 'exercise'], cats: ['health'] },
+    { e: '🥦', k: ['vegetables', 'diet'], cats: ['health'] },
+
+    { e: '🎮', k: ['games', 'gaming'], cats: ['fun'] },
+    { e: '🎟️', k: ['tickets', 'event'], cats: ['fun'] },
+    { e: '🎉', k: ['party', 'celebration'], cats: ['fun'] },
+    { e: '🏖️', k: ['vacation', 'beach', 'holiday'], cats: ['fun'] },
+    { e: '🗺️', k: ['travel', 'trip', 'map'], cats: ['fun'] },
+    { e: '🎵', k: ['music', 'streaming'], cats: ['fun'] },
+    { e: '📚', k: ['books', 'education'], cats: ['fun'] },
+    { e: '🎨', k: ['hobby', 'art'], cats: ['fun'] },
+
+    { e: '🐱', k: ['cat', 'pet'], cats: ['family'] },
+    { e: '🎂', k: ['birthday', 'cake'], cats: ['family'] },
+    { e: '👪', k: ['family'], cats: ['family'] },
+    { e: '🧸', k: ['kids', 'toys'], cats: ['family'] },
+
+    { e: '✨', k: ['sparkle', 'misc', 'new'], cats: ['other'] },
+    { e: '⭐', k: ['star', 'favorite'], cats: ['other'] },
+    { e: '❤️', k: ['heart', 'love'], cats: ['other'] },
+    { e: '🔥', k: ['fire', 'hot'], cats: ['other'] },
+    { e: '🎓', k: ['school', 'tuition', 'education'], cats: ['other'] },
+    { e: '🔖', k: ['bookmark', 'subscription'], cats: ['other'] },
+  ];
+
   /* ---------------------------- helpers ---------------------------- */
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -83,7 +186,7 @@
       version: 1,
       categories: STARTER_TILES.map(([name, emoji]) => ({ id: uid(), name, emoji, hidden: false })),
       entries: [],
-      settings: { method: 'card', warm: true, bars: true, lastBackup: null, nudgeUntil: 0 },
+      settings: { method: 'card', warm: true, bars: true, lastBackup: null, nudgeUntil: 0, recentEmoji: [] },
     };
   }
 
@@ -152,6 +255,9 @@
         bars: s.bars !== false,
         lastBackup: Number(s.lastBackup) > 0 ? Number(s.lastBackup) : null,
         nudgeUntil: Number(s.nudgeUntil) || 0,
+        recentEmoji: Array.isArray(s.recentEmoji)
+          ? s.recentEmoji.filter((e) => typeof e === 'string' && e).map((e) => e.slice(0, 8)).slice(0, 8)
+          : [],
       },
     };
   }
@@ -680,6 +786,101 @@
     if (btn && !btn.disabled) btn.focus();
   }
 
+  function flashRow(id) {
+    const row = $(`.trow[data-id="${id}"]`);
+    if (!row) return;
+    row.classList.add('flash');
+    setTimeout(() => row.classList.remove('flash'), 900);
+  }
+
+  function emojisByCat(catId) {
+    return EMOJI_LIBRARY.filter((item) => item.cats.includes(catId));
+  }
+
+  function emojisBySearch(q) {
+    return EMOJI_LIBRARY.filter((item) => item.k.some((kw) => kw.includes(q)));
+  }
+
+  function openEmojiPicker(tile) {
+    let activeCat = 'popular';
+
+    const grid = h('div', { class: 'emoji-grid' });
+    const tabs = h('div', { class: 'emoji-tabs', role: 'radiogroup', 'aria-label': 'Emoji category' });
+    const recentLabel = h('p', { class: 'emoji-row-label', text: 'Recent' });
+    const recentRow = h('div', { class: 'emoji-chips' });
+    const search = h('input', {
+      type: 'text', class: 'emoji-picker-search', autocomplete: 'off',
+      placeholder: 'Search — try “coffee” or “car”',
+      oninput: (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) {
+          renderRecent();
+          tabs.hidden = false;
+          renderGrid(emojisByCat(activeCat));
+          return;
+        }
+        recentLabel.hidden = true;
+        recentRow.hidden = true;
+        tabs.hidden = true;
+        renderGrid(emojisBySearch(q));
+      },
+    });
+
+    function renderGrid(list) {
+      grid.replaceChildren(
+        ...(list.length
+          ? list.map((item) => h('button', { type: 'button', text: item.e, onclick: () => pick(item.e) }))
+          : [h('p', { class: 'emoji-empty', text: 'No matches — try a category below.' })])
+      );
+    }
+
+    function renderTabs() {
+      tabs.replaceChildren(
+        ...EMOJI_CATS.map((c) => h('button', {
+          type: 'button', class: 'emoji-tab', role: 'radio', 'aria-checked': String(c.id === activeCat), text: c.label,
+          onclick: () => {
+            activeCat = c.id;
+            search.value = '';
+            renderTabs();
+            renderGrid(emojisByCat(activeCat));
+          },
+        }))
+      );
+    }
+
+    function renderRecent() {
+      const recent = state.settings.recentEmoji;
+      recentLabel.hidden = recent.length === 0;
+      recentRow.hidden = recent.length === 0;
+      recentRow.replaceChildren(
+        ...recent.map((e) => h('button', { type: 'button', class: 'emoji-chip', text: e, onclick: () => pick(e) }))
+      );
+    }
+
+    function pick(emoji) {
+      tile.emoji = emoji;
+      state.settings.recentEmoji = [emoji, ...state.settings.recentEmoji.filter((e) => e !== emoji)].slice(0, 8);
+      save();
+      closeModal();
+      renderEditor();
+      flashRow(tile.id);
+    }
+
+    renderTabs();
+    renderRecent();
+    renderGrid(emojisByCat(activeCat));
+
+    openModal(
+      h('h2', { class: 'modal-title', text: 'Choose an emoji' }),
+      search,
+      recentLabel,
+      recentRow,
+      tabs,
+      grid,
+      h('button', { type: 'button', class: 'link-btn', text: 'Cancel', onclick: closeModal })
+    );
+  }
+
   function moveTile(id, dir) {
     const i = state.categories.findIndex((c) => c.id === id);
     const j = i + dir;
@@ -695,10 +896,10 @@
     const last = state.categories.length - 1;
     ul.replaceChildren(
       ...state.categories.map((c, i) => h('li', { class: 'trow' + (c.hidden ? ' is-hidden' : ''), 'data-id': c.id },
-        h('input', {
-          type: 'text', class: 'emoji-in', value: c.emoji, maxlength: '8', placeholder: '🙂',
-          autocomplete: 'off', 'aria-label': 'Picture for ' + nameOf(c),
-          oninput: (e) => { c.emoji = e.target.value.trim(); save(); },
+        h('button', {
+          type: 'button', class: 'emoji-in', text: c.emoji || '🙂',
+          'aria-label': 'Change picture for ' + nameOf(c),
+          onclick: () => openEmojiPicker(c),
         }),
         h('input', {
           type: 'text', class: 'name-in', value: c.name, maxlength: '30', placeholder: 'Name this tile',
