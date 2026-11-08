@@ -148,6 +148,7 @@ button { cursor: pointer; }
   transition: transform .08s ease, background .15s ease;
 }
 .tile:active { transform: scale(.97); background: var(--sage-soft); }
+.tile.dragging { position: relative; z-index: 5; touch-action: none; background: var(--sage-soft); box-shadow: 0 8px 20px rgba(0, 0, 0, .2); }
 .tile-emoji { font-size: 28px; line-height: 1; }
 .tile-name {
   max-width: 100%;
@@ -287,18 +288,34 @@ button { cursor: pointer; }
 /* ---------- tile editor ---------- */
 .trow {
   display: grid;
-  grid-template-columns: 52px 1fr;
+  grid-template-columns: 22px 40px 1fr auto;
   gap: 8px;
-  padding: 10px;
-  margin-bottom: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  margin-bottom: 6px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
 }
 .trow.is-hidden { opacity: .6; }
 .trow.flash { border-color: var(--sage); box-shadow: 0 0 0 3px var(--sage-soft); }
+.trow.dragging { position: relative; z-index: 5; background: var(--sage-soft); box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
+.trow-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
 .trow input[type="text"] {
-  height: 44px;
+  height: 40px;
   min-width: 0;
   padding: 0 10px;
   background: var(--bg);
@@ -306,13 +323,14 @@ button { cursor: pointer; }
   border-radius: 10px;
 }
 .emoji-in {
-  height: 44px;
+  height: 40px;
+  width: 40px;
   min-width: 0;
   background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 10px;
   text-align: center;
-  font-size: 22px;
+  font-size: 20px;
 }
 .emoji-in:active { background: var(--sage-soft); }
 
@@ -382,15 +400,13 @@ button { cursor: pointer; }
 }
 .emoji-grid button:active { background: var(--sage-soft); }
 .emoji-empty { grid-column: 1 / -1; text-align: center; color: var(--muted); font-size: 14px; padding: 10px 0; }
-.row-actions { grid-column: 1 / -1; display: flex; gap: 8px; }
 .mini {
-  min-width: 44px; height: 40px; padding: 0 12px;
+  min-width: 56px; height: 36px; padding: 0 10px;
   background: transparent;
   border: 1px solid var(--line);
   border-radius: 10px;
+  font-size: 14px;
 }
-.mini.wide { margin-left: auto; min-width: 72px; }
-.mini:disabled { opacity: .35; cursor: default; }
 #add-tile-btn { margin-top: 6px; }
 
 /* ---------- toast + modal ---------- */

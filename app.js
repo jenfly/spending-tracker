@@ -510,25 +510,30 @@
     renderMethod();
   });
 
-  // Tap a tile to save; long-press a tile to edit it.
+  // Tap a tile to save; long-press and drag a tile to reorder it.
+  const homeDrag = makeDragReorder($('#tiles'), '.tile', (draggedId, targetId) => {
+    moveCategoryBefore(draggedId, targetId);
+    renderTiles();
+  });
+
   (() => {
     const box = $('#tiles');
     let timer = null;
-    let longPressed = false;
+    let dragging = false;
     let sx = 0;
     let sy = 0;
 
     box.addEventListener('pointerdown', (e) => {
       const t = e.target.closest('.tile');
       if (!t) return;
-      longPressed = false;
+      dragging = false;
       sx = e.clientX;
       sy = e.clientY;
+      const pointerId = e.pointerId;
       clearTimeout(timer);
       timer = setTimeout(() => {
-        longPressed = true;
-        focusTileId = t.dataset.id;
-        go('tiles');
+        dragging = true;
+        homeDrag.begin(pointerId, t.dataset.id, sx, sy);
       }, 600);
     });
     box.addEventListener('pointermove', (e) => {
@@ -539,7 +544,7 @@
     box.addEventListener('click', (e) => {
       const t = e.target.closest('.tile');
       if (!t) return;
-      if (longPressed) { longPressed = false; return; }
+      if (dragging) { dragging = false; return; }
       addEntry(t.dataset.id);
     });
   })();
@@ -880,21 +885,84 @@
     );
   }
 
-  function moveTile(id, dir) {
-    const i = state.categories.findIndex((c) => c.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= state.categories.length) return;
-    [state.categories[i], state.categories[j]] = [state.categories[j], state.categories[i]];
-    save();
-    renderEditor();
-    focusRowControl(id, dir < 0 ? 'up' : 'down');
+  // Moves the dragged category to sit right before the target category.
+  function moveCategoryBefore(draggedId, targetId) {
+    const arr = state.categories;
+    const i = arr.findIndex((c) => c.id === draggedId);
+    if (i < 0) return;
+    const [item] = arr.splice(i, 1);
+    const j = arr.findIndex((c) => c.id === targetId);
+    arr.splice(j < 0 ? arr.length : j, 0, item);
   }
+
+  // Pointer-driven drag-to-reorder for a list of items inside `container`.
+  // `onMove(draggedId, targetId)` is called whenever the dragged item crosses
+  // over another item, and is responsible for re-rendering.
+  function makeDragReorder(container, itemSelector, onMove) {
+    let dragId = null;
+    let sx = 0;
+    let sy = 0;
+
+    function elementUnder(x, y, el) {
+      const prev = el.style.pointerEvents;
+      el.style.pointerEvents = 'none';
+      const hit = document.elementFromPoint(x, y);
+      el.style.pointerEvents = prev;
+      return hit && hit.closest(itemSelector);
+    }
+
+    function begin(pointerId, id, x, y) {
+      dragId = id;
+      sx = x;
+      sy = y;
+      const el = $(`${itemSelector}[data-id="${id}"]`, container);
+      if (el) el.classList.add('dragging');
+      try { container.setPointerCapture(pointerId); } catch (_) { /* no-op */ }
+    }
+
+    container.addEventListener('pointermove', (e) => {
+      if (!dragId) return;
+      e.preventDefault();
+      const el = $(`${itemSelector}[data-id="${dragId}"]`, container);
+      if (!el) return;
+      el.style.transform = `translate(${e.clientX - sx}px, ${e.clientY - sy}px)`;
+      const target = elementUnder(e.clientX, e.clientY, el);
+      if (target && target.dataset.id !== dragId) {
+        onMove(dragId, target.dataset.id);
+        const moved = $(`${itemSelector}[data-id="${dragId}"]`, container);
+        if (moved) moved.classList.add('dragging');
+        sx = e.clientX;
+        sy = e.clientY;
+      }
+    });
+
+    function end(e) {
+      if (!dragId) return;
+      const el = $(`${itemSelector}[data-id="${dragId}"]`, container);
+      if (el) { el.style.transform = ''; el.classList.remove('dragging'); }
+      dragId = null;
+      try { container.releasePointerCapture(e.pointerId); } catch (_) { /* no-op */ }
+      save();
+    }
+    container.addEventListener('pointerup', end);
+    container.addEventListener('pointercancel', end);
+
+    return { begin };
+  }
+
+  const editorDrag = makeDragReorder($('#tiles-list'), '.trow', (draggedId, targetId) => {
+    moveCategoryBefore(draggedId, targetId);
+    renderEditor();
+  });
 
   function renderEditor() {
     const ul = $('#tiles-list');
-    const last = state.categories.length - 1;
     ul.replaceChildren(
-      ...state.categories.map((c, i) => h('li', { class: 'trow' + (c.hidden ? ' is-hidden' : ''), 'data-id': c.id },
+      ...state.categories.map((c) => h('li', { class: 'trow' + (c.hidden ? ' is-hidden' : ''), 'data-id': c.id },
+        h('span', {
+          class: 'trow-handle', 'aria-hidden': 'true', text: '≡',
+          onpointerdown: (e) => { e.preventDefault(); editorDrag.begin(e.pointerId, c.id, e.clientX, e.clientY); },
+        }),
         h('button', {
           type: 'button', class: 'emoji-in', text: c.emoji || '🙂',
           'aria-label': 'Change picture for ' + nameOf(c),
@@ -905,13 +973,11 @@
           autocomplete: 'off', 'aria-label': 'Tile name',
           oninput: (e) => { c.name = e.target.value; save(); },
         }),
-        h('div', { class: 'row-actions' },
-          h('button', { type: 'button', class: 'mini', 'data-act': 'up', 'aria-label': 'Move up', text: '↑', disabled: i === 0, onclick: () => moveTile(c.id, -1) }),
-          h('button', { type: 'button', class: 'mini', 'data-act': 'down', 'aria-label': 'Move down', text: '↓', disabled: i === last, onclick: () => moveTile(c.id, 1) }),
-          h('button', {
-            type: 'button', class: 'mini wide', 'data-act': 'hide', text: c.hidden ? 'Show' : 'Hide',
-            onclick: () => { c.hidden = !c.hidden; save(); renderEditor(); focusRowControl(c.id, 'hide'); },
-          })))
+        h('button', {
+          type: 'button', class: 'mini', 'data-act': 'hide', text: c.hidden ? 'Show' : 'Hide',
+          'aria-label': (c.hidden ? 'Show' : 'Hide') + ' ' + nameOf(c),
+          onclick: () => { c.hidden = !c.hidden; save(); renderEditor(); focusRowControl(c.id, 'hide'); },
+        }))
       )
     );
 
