@@ -14,7 +14,7 @@
   const DAY = 86400000;
 
   const STARTER_TILES = [
-    ['Food', '🍎'],
+    ['Food', '🍎', ['Groceries', 'Coffee', 'Takeout']],
     ['Car', '🚗'],
     ['Pets', '🐾'],
     ['Home', '🏠'],
@@ -185,7 +185,13 @@
   function defaultState() {
     return {
       version: 1,
-      categories: STARTER_TILES.map(([name, emoji]) => ({ id: uid(), name, emoji, hidden: false })),
+      categories: STARTER_TILES.map(([name, emoji, subs]) => ({
+        id: uid(),
+        name,
+        emoji,
+        hidden: false,
+        subs: (subs || []).map((subName) => ({ id: uid(), name: subName, hidden: false })),
+      })),
       entries: [],
       settings: { method: 'card', bars: true, lastBackup: null, nudgeUntil: 0, recentEmoji: [] },
     };
@@ -202,11 +208,25 @@
     for (const c of raw.categories) {
       if (!c || typeof c.id !== 'string' || catIds.has(c.id)) continue;
       catIds.add(c.id);
+      const subs = [];
+      const subIds = new Set();
+      if (Array.isArray(c.subs)) {
+        for (const s of c.subs) {
+          if (!s || typeof s.id !== 'string' || subIds.has(s.id)) continue;
+          subIds.add(s.id);
+          subs.push({
+            id: s.id,
+            name: String(s.name == null ? '' : s.name).slice(0, 30),
+            hidden: !!s.hidden,
+          });
+        }
+      }
       cats.push({
         id: c.id,
         name: String(c.name == null ? '' : c.name).slice(0, 30),
         emoji: String(c.emoji == null ? '' : c.emoji).slice(0, 8),
         hidden: !!c.hidden,
+        subs,
       });
     }
     if (cats.length === 0) {
@@ -228,6 +248,7 @@
         method: e.method === 'cash' ? 'cash' : 'card',
         categoryId: typeof e.categoryId === 'string' ? e.categoryId : '',
       };
+      if (typeof e.subId === 'string' && e.subId) entry.subId = e.subId;
       const note = typeof e.note === 'string' ? e.note.trim().slice(0, NOTE_MAX) : '';
       if (note) entry.note = note;
       entries.push(entry);
@@ -238,11 +259,20 @@
     for (const e of entries) {
       if (catIds.has(e.categoryId)) continue;
       if (!other) {
-        other = { id: uid(), name: 'Other', emoji: '📝', hidden: true };
+        other = { id: uid(), name: 'Other', emoji: '📝', hidden: true, subs: [] };
         cats.push(other);
         catIds.add(other.id);
       }
       e.categoryId = other.id;
+    }
+
+    // Entries pointing at a sub-tile that's gone (or doesn't belong to its
+    // tile anymore) fall back to the plain parent tile.
+    const catsById = new Map(cats.map((c) => [c.id, c]));
+    for (const e of entries) {
+      if (!e.subId) continue;
+      const parent = catsById.get(e.categoryId);
+      if (!parent || !parent.subs.some((s) => s.id === e.subId)) delete e.subId;
     }
 
     const s = raw.settings && typeof raw.settings === 'object' ? raw.settings : {};
@@ -288,23 +318,32 @@
   /* ------------------------------ toast ----------------------------- */
 
   let toastTimer = null;
-  function toast(message, action, ms = 5000) {
+
+  // `build(hide)` returns the child nodes for the toast; call `hide()` from
+  // an action to dismiss it immediately.
+  function showToast(build, ms = 5000) {
     const t = $('#toast');
     clearTimeout(toastTimer);
-    t.replaceChildren(
-      h('span', { class: 'toast-msg', text: message }),
-      action && h('button', {
-        type: 'button',
-        class: 'toast-btn',
-        text: action.label,
-        onclick: () => { clearTimeout(toastTimer); t.hidden = true; action.fn(); },
-      })
-    );
+    const hide = () => { t.hidden = true; };
+    t.replaceChildren(...build(hide));
     t.hidden = false;
     t.classList.remove('show');
     void t.offsetWidth;
     t.classList.add('show');
-    toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+    toastTimer = setTimeout(hide, ms);
+  }
+
+  function toast(message, action, ms = 5000) {
+    showToast((hide) => [
+      h('div', { class: 'toast-main' },
+        h('span', { class: 'toast-msg', text: message }),
+        action && h('button', {
+          type: 'button',
+          class: 'toast-btn',
+          text: action.label,
+          onclick: () => { clearTimeout(toastTimer); hide(); action.fn(); },
+        })),
+    ], ms);
   }
 
   /* ------------------------------ modal ----------------------------- */
@@ -477,13 +516,55 @@
     renderAmount();
     renderNote();
     const cat = state.categories.find((c) => c.id === categoryId);
-    toast(`Saved ${fmt(cents)} · ${labelOf(cat)}`, {
-      label: 'Undo',
-      fn: () => {
-        state.entries = state.entries.filter((e) => e.id !== entry.id);
-        save();
-      },
-    });
+    toastEntrySaved(entry, cat);
+  }
+
+  // Shows the "Saved · Undo" toast. If the tile has sub-tiles, also shows a
+  // row of optional chips (tap one to tag the entry that was just saved) and
+  // an "Edit" link to that tile's sub-tile list. Ignoring the chips is fine —
+  // they fade away with the toast and the entry stays as a plain tile.
+  function toastEntrySaved(entry, cat) {
+    const undo = () => {
+      state.entries = state.entries.filter((e) => e.id !== entry.id);
+      save();
+    };
+    const subs = cat && Array.isArray(cat.subs) ? cat.subs.filter((s) => !s.hidden) : [];
+    if (!subs.length) {
+      toast(`Saved ${fmt(entry.cents)} · ${labelOf(cat)}`, { label: 'Undo', fn: undo });
+      return;
+    }
+    showToast((hide) => {
+      const msg = h('span', { class: 'toast-msg', text: `Saved ${fmt(entry.cents)} · ${labelOf(cat)}` });
+      const chips = h('div', { class: 'toast-chips' },
+        ...subs.map((s) => h('button', {
+          type: 'button',
+          class: 'toast-chip',
+          text: nameOf(s),
+          onclick: () => {
+            entry.subId = s.id;
+            save();
+            msg.textContent = `Saved ${fmt(entry.cents)} · ${labelOf(cat)} · ${nameOf(s)}`;
+            chips.hidden = true;
+          },
+        })));
+      return [
+        h('div', { class: 'toast-main' },
+          msg,
+          h('button', {
+            type: 'button',
+            class: 'toast-btn',
+            text: 'Undo',
+            onclick: () => { clearTimeout(toastTimer); hide(); undo(); },
+          })),
+        chips,
+        h('button', {
+          type: 'button',
+          class: 'toast-edit',
+          text: 'Edit',
+          onclick: () => { clearTimeout(toastTimer); hide(); go('tiles'); openSubEditor(cat); },
+        }),
+      ];
+    }, 8000);
   }
 
   $('#pad').addEventListener('click', (e) => {
@@ -666,6 +747,28 @@
     }
   }
 
+  // Per-sub-tile totals for one tile's entries, plus a "plain <tile>" row for
+  // entries with no sub-tile. Only returns rows that actually have money in
+  // them, and only once at least one entry is tagged with a sub-tile.
+  function subBreakdown(cat, entries) {
+    if (!cat || !Array.isArray(cat.subs) || !cat.subs.length) return [];
+    const bySub = new Map();
+    let plain = 0;
+    for (const e of entries) {
+      if (e.subId && cat.subs.some((s) => s.id === e.subId)) {
+        bySub.set(e.subId, (bySub.get(e.subId) || 0) + e.cents);
+      } else {
+        plain += e.cents;
+      }
+    }
+    if (!bySub.size) return [];
+    const rows = cat.subs
+      .map((s) => ({ label: nameOf(s), amount: bySub.get(s.id) || 0 }))
+      .filter((r) => r.amount > 0);
+    if (plain > 0) rows.push({ label: `Plain ${nameOf(cat)}`, amount: plain });
+    return rows;
+  }
+
   function renderEntriesView(root, inRange) {
     const all = lb.cat === '__all';
     const cat = state.categories.find((c) => c.id === lb.cat);
@@ -678,6 +781,20 @@
       h('div', { class: 'sub-total', text: fmt(sum(subset)) })
     );
 
+    if (!all) {
+      const rows = subBreakdown(cat, subset);
+      if (rows.length) {
+        root.append(
+          h('details', { class: 'more' },
+            h('summary', { text: 'See the split by sub-tile' }),
+            h('ul', { class: 'sub-split-list' }, rows.map((r) => h('li', { class: 'sub-split-row' },
+              h('span', { text: r.label }),
+              h('span', { class: 'sub-split-amt', text: fmt(r.amount) }))))
+          )
+        );
+      }
+    }
+
     if (!subset.length) {
       root.append(h('p', { class: 'empty', text: 'Nothing here.' }));
       return;
@@ -686,12 +803,17 @@
     root.append(
       h('ul', { class: 'entry-list' }, subset.map((e) => {
         const date = new Date(e.ts).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-        const sub = (all ? labelOf(catById.get(e.categoryId)) + ' · ' : '') + (e.method === 'cash' ? 'Cash' : 'Card');
+        const parentCat = catById.get(e.categoryId);
+        const subTile = parentCat && Array.isArray(parentCat.subs) ? parentCat.subs.find((s) => s.id === e.subId) : null;
+        const parts = [];
+        if (all) parts.push(labelOf(parentCat));
+        if (subTile) parts.push(nameOf(subTile));
+        parts.push(e.method === 'cash' ? 'Cash' : 'Card');
         return h('li', {},
           h('button', { type: 'button', class: 'entry', onclick: () => openEntryEditor(e) },
             h('span', { class: 'entry-main' },
               h('span', { class: 'entry-date', text: date }),
-              h('span', { class: 'entry-sub', text: sub }),
+              h('span', { class: 'entry-sub', text: parts.join(' · ') }),
               e.note ? h('span', { class: 'entry-note', text: e.note }) : null),
             h('span', { class: 'entry-amt', text: fmt(e.cents) })));
       }))
@@ -701,11 +823,28 @@
   function openEntryEditor(entry) {
     let method = entry.method;
     const amount = h('input', { type: 'text', inputmode: 'decimal', autocomplete: 'off', value: (entry.cents / 100).toFixed(2) });
-    const cat = h('select', {},
+    const subSel = h('select', { 'aria-label': 'Sub-tile' });
+    const subField = h('label', { class: 'field' }, h('span', { text: 'Sub-tile' }), subSel);
+    function refreshSubs(categoryId, keepSubId) {
+      const parent = state.categories.find((c) => c.id === categoryId);
+      const subs = parent && Array.isArray(parent.subs)
+        ? parent.subs.filter((s) => !s.hidden || s.id === keepSubId)
+        : [];
+      subSel.replaceChildren(
+        h('option', { value: '', text: 'No sub-tile' }),
+        ...subs.map((s) => h('option', { value: s.id, text: nameOf(s) }))
+      );
+      subSel.value = subs.some((s) => s.id === keepSubId) ? keepSubId : '';
+      subField.hidden = subs.length === 0;
+    }
+    const cat = h('select', {
+      onchange: () => refreshSubs(cat.value, ''),
+    },
       state.categories
         .filter((c) => !c.hidden || c.id === entry.categoryId)
         .map((c) => h('option', { value: c.id, text: labelOf(c) })));
     cat.value = entry.categoryId;
+    refreshSubs(entry.categoryId, entry.subId || '');
     const date = h('input', { type: 'date', value: ymd(new Date(entry.ts)) });
     const noteIn = h('input', {
       type: 'text', maxlength: String(NOTE_MAX), autocomplete: 'off', placeholder: 'Optional', value: entry.note || '',
@@ -736,6 +875,8 @@
       }
       entry.cents = cents;
       entry.categoryId = cat.value;
+      if (subSel.value) entry.subId = subSel.value;
+      else delete entry.subId;
       entry.method = method;
       entry.ts = ts;
       const newNote = noteIn.value.trim();
@@ -769,6 +910,7 @@
       note,
       seg,
       h('label', { class: 'field' }, h('span', { text: 'Tile' }), cat),
+      subField,
       h('label', { class: 'field' }, h('span', { text: 'Date' }), date),
       h('label', { class: 'field' }, h('span', { text: 'Note' }), noteIn),
       h('div', { class: 'modal-actions' },
@@ -951,6 +1093,14 @@
     renderEditor();
   });
 
+  // Short line under a tile's name: a count/preview of its sub-tiles, or an
+  // invite to add some. Tapping it opens that tile's sub-tile list.
+  function subsSummaryLabel(c) {
+    const subs = Array.isArray(c.subs) ? c.subs.filter((s) => !s.hidden) : [];
+    if (!subs.length) return 'Sub-tiles · add some';
+    return 'Sub-tiles · ' + subs.map((s) => nameOf(s)).join(', ');
+  }
+
   function renderEditor() {
     const ul = $('#tiles-list');
     ul.replaceChildren(
@@ -973,6 +1123,11 @@
           type: 'button', class: 'mini', 'data-act': 'hide', text: c.hidden ? 'Show' : 'Hide',
           'aria-label': (c.hidden ? 'Show' : 'Hide') + ' ' + nameOf(c),
           onclick: () => { c.hidden = !c.hidden; save(); renderEditor(); focusRowControl(c.id, 'hide'); },
+        }),
+        h('button', {
+          type: 'button', class: 'sub-line', text: subsSummaryLabel(c),
+          'aria-label': 'Edit sub-tiles for ' + nameOf(c),
+          onclick: () => openSubEditor(c),
         }))
       )
     );
@@ -986,6 +1141,99 @@
         $('.name-in', row).focus({ preventScroll: true });
       }
     }
+  }
+
+  // The sub-tile list for one tile: add, rename, reorder (same drag as the
+  // main tile list) and hide. A true delete moves that sub-tile's entries
+  // back to the plain parent tile, so a tap-again confirms instead of a
+  // nagging dialog.
+  function openSubEditor(cat) {
+    if (!Array.isArray(cat.subs)) cat.subs = [];
+    let focusSubId = null;
+    let confirmingId = null;
+
+    const list = h('ul', { class: 'tiles-list sub-tiles-list' });
+
+    function renderList() {
+      list.replaceChildren(
+        ...cat.subs.map((s) => h('li', { class: 'trow sub-row' + (s.hidden ? ' is-hidden' : ''), 'data-id': s.id },
+          h('span', {
+            class: 'trow-handle', 'aria-hidden': 'true', text: '≡',
+            onpointerdown: (e) => { e.preventDefault(); dragger.begin(e.pointerId, s.id, e.clientX, e.clientY); },
+          }),
+          h('input', {
+            type: 'text', class: 'name-in', value: s.name, maxlength: '30', placeholder: 'Name this sub-tile',
+            autocomplete: 'off', 'aria-label': 'Sub-tile name',
+            oninput: (e) => { s.name = e.target.value; save(); },
+          }),
+          h('button', {
+            type: 'button', class: 'mini', text: s.hidden ? 'Show' : 'Hide',
+            'aria-label': (s.hidden ? 'Show' : 'Hide') + ' ' + nameOf(s),
+            onclick: () => { s.hidden = !s.hidden; save(); renderList(); },
+          }),
+          h('button', {
+            type: 'button', class: 'mini' + (confirmingId === s.id ? ' confirm' : ''),
+            text: confirmingId === s.id ? 'Tap again' : 'Delete',
+            'aria-label': 'Delete ' + nameOf(s),
+            onclick: () => {
+              if (confirmingId === s.id) { deleteSub(s); return; }
+              confirmingId = s.id;
+              renderList();
+              setTimeout(() => { if (confirmingId === s.id) { confirmingId = null; renderList(); } }, 3000);
+            },
+          }))
+        )
+      );
+      if (focusSubId) {
+        const row = $(`li[data-id="${focusSubId}"]`, list);
+        focusSubId = null;
+        if (row) {
+          row.classList.add('flash');
+          if (row.scrollIntoView) row.scrollIntoView({ block: 'center' });
+          $('.name-in', row).focus({ preventScroll: true });
+        }
+      }
+    }
+
+    const dragger = makeDragReorder(list, '.trow.sub-row', (draggedId, targetId) => {
+      const arr = cat.subs;
+      const i = arr.findIndex((s) => s.id === draggedId);
+      if (i < 0) return;
+      const [item] = arr.splice(i, 1);
+      const j = arr.findIndex((s) => s.id === targetId);
+      arr.splice(j < 0 ? arr.length : j, 0, item);
+      renderList();
+    });
+
+    function deleteSub(s) {
+      const idx = cat.subs.findIndex((x) => x.id === s.id);
+      if (idx < 0) return;
+      cat.subs.splice(idx, 1);
+      state.entries.forEach((e) => { if (e.categoryId === cat.id && e.subId === s.id) delete e.subId; });
+      confirmingId = null;
+      save();
+      renderList();
+      renderEditor();
+    }
+
+    renderList();
+
+    openModal(
+      h('h2', { class: 'modal-title', text: nameOf(cat) + ' sub-tiles' }),
+      h('p', { class: 'help', text: `Optional detail under this tile, like Groceries or Coffee under Food. Leave it empty and entries stay as plain ${nameOf(cat)}.` }),
+      list,
+      h('button', {
+        type: 'button', class: 'btn ghost block', text: 'Add a sub-tile',
+        onclick: () => {
+          const sub = { id: uid(), name: '', hidden: false };
+          cat.subs.push(sub);
+          save();
+          focusSubId = sub.id;
+          renderList();
+        },
+      }),
+      h('button', { type: 'button', class: 'btn primary block', text: 'Done', onclick: () => { closeModal(); renderEditor(); } })
+    );
   }
 
   $('#add-tile-btn').addEventListener('click', () => {
