@@ -186,7 +186,7 @@
       version: 1,
       categories: STARTER_TILES.map(([name, emoji]) => ({ id: uid(), name, emoji, hidden: false })),
       entries: [],
-      settings: { method: 'card', warm: true, bars: true, lastBackup: null, nudgeUntil: 0, recentEmoji: [] },
+      settings: { method: 'card', bars: true, lastBackup: null, nudgeUntil: 0, recentEmoji: [] },
     };
   }
 
@@ -251,7 +251,6 @@
       entries,
       settings: {
         method: s.method === 'cash' ? 'cash' : 'card',
-        warm: s.warm !== false,
         bars: s.bars !== false,
         lastBackup: Number(s.lastBackup) > 0 ? Number(s.lastBackup) : null,
         nudgeUntil: Number(s.nudgeUntil) || 0,
@@ -618,11 +617,11 @@
     root.append(
       h('div', { class: 'total-block' },
         h('div', { class: 'total-amount', text: fmt(total) }),
-        state.settings.warm && inRange.length ? h('p', { class: 'warm', text: 'Here’s where things went.' }) : null)
+        inRange.length ? h('p', { class: 'warm', text: 'Here’s where things went.' }) : null)
     );
 
     if (!inRange.length) {
-      root.append(h('p', { class: 'empty', text: 'Nothing noted for this stretch yet, and that’s okay.' }));
+      root.append(h('p', { class: 'empty', text: 'Nothing noted for this stretch yet.' }));
     } else {
       const rows = state.categories
         .map((c) => ({ c, amount: sum(inRange.filter((e) => e.categoryId === c.id)) }))
@@ -942,11 +941,9 @@
     $('#backup-status').textContent = s.lastBackup
       ? 'Last backup: ' + new Date(s.lastBackup).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
       : 'No backup saved yet.';
-    $('#opt-warm').checked = s.warm;
     $('#opt-bars').checked = s.bars;
   }
 
-  $('#opt-warm').addEventListener('change', (e) => { state.settings.warm = e.target.checked; save(); });
   $('#opt-bars').addEventListener('change', (e) => { state.settings.bars = e.target.checked; save(); });
 
   function exportBackup() {
