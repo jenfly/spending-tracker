@@ -765,7 +765,7 @@
     const rows = cat.subs
       .map((s) => ({ label: nameOf(s), amount: bySub.get(s.id) || 0 }))
       .filter((r) => r.amount > 0);
-    if (plain > 0) rows.push({ label: `Plain ${nameOf(cat)}`, amount: plain });
+    if (plain > 0) rows.push({ label: `Other ${nameOf(cat)}`, amount: plain });
     return rows;
   }
 
@@ -785,7 +785,7 @@
       const rows = subBreakdown(cat, subset);
       if (rows.length) {
         root.append(
-          h('details', { class: 'more' },
+          h('details', { class: 'more sub-split' },
             h('summary', { text: 'See the split by sub-tile' }),
             h('ul', { class: 'sub-split-list' }, rows.map((r) => h('li', { class: 'sub-split-row' },
               h('span', { text: r.label }),

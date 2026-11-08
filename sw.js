@@ -1,6 +1,6 @@
 // Spend Notes service worker: makes the app open instantly and work offline.
 // When you change any app file, bump CACHE so phones pick up the new version.
-const CACHE = 'spend-notes-v2';
+const CACHE = 'spend-notes-v3';
 
 const ASSETS = [
   './',
