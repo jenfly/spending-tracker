@@ -537,7 +537,7 @@
       }, 600);
     });
     box.addEventListener('pointermove', (e) => {
-      if (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10) clearTimeout(timer);
+      if (!dragging && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) clearTimeout(timer);
     });
     ['pointerup', 'pointercancel'].forEach((ev) => box.addEventListener(ev, () => clearTimeout(timer)));
     box.addEventListener('contextmenu', (e) => e.preventDefault());
