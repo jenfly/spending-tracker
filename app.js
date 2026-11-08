@@ -54,6 +54,10 @@
     { e: '👶', k: ['baby', 'kid', 'child'], cats: ['popular', 'family'] },
     { e: '🏋️', k: ['gym', 'fitness', 'workout'], cats: ['popular', 'health'] },
     { e: '🍺', k: ['beer', 'bar', 'drinks'], cats: ['popular', 'food'] },
+    { e: '🍎', k: ['apple', 'fruit', 'food', 'groceries'], cats: ['popular', 'food'] },
+    { e: '🐾', k: ['pets', 'paw', 'animal'], cats: ['popular', 'family'] },
+    { e: '🌿', k: ['health', 'herb', 'leaf', 'wellness'], cats: ['popular', 'health'] },
+    { e: '🎈', k: ['fun', 'balloon', 'party'], cats: ['popular', 'fun'] },
 
     { e: '🍕', k: ['pizza'], cats: ['food'] },
     { e: '🍜', k: ['noodles', 'ramen', 'takeout'], cats: ['food'] },
